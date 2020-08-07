@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2019, The Linux Foundation. All rights reserved.
  * Copyright (C) 2020 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,6 +21,7 @@
 #include <linux/msm_kgsl.h>
 #include <linux/ratelimit.h>
 #include <linux/of_platform.h>
+#include <linux/random.h>
 #include <soc/qcom/scm.h>
 #include <soc/qcom/secure_buffer.h>
 #include <linux/compat.h>
@@ -225,13 +226,18 @@ static void kgsl_iommu_remove_global(struct kgsl_mmu *mmu,
 static void kgsl_iommu_add_global(struct kgsl_mmu *mmu,
 		struct kgsl_memdesc *memdesc, const char *name)
 {
+<<<<<<< HEAD
 	int bit;
+=======
+	u32 bit, start = 0;
+>>>>>>> 9ee923a8a7d8573757c34eb9095117dc1e2d15b6
 	u64 size = kgsl_memdesc_footprint(memdesc);
 
 	if (memdesc->gpuaddr != 0)
 		return;
 
 	if (WARN_ON(global_pt_count >= GLOBAL_PT_ENTRIES))
+<<<<<<< HEAD
 		return;
 
 	bit = bitmap_find_next_zero_area(global_map, GLOBAL_MAP_PAGES,
@@ -239,6 +245,30 @@ static void kgsl_iommu_add_global(struct kgsl_mmu *mmu,
 
 
 	if (WARN_ON(bit >= GLOBAL_MAP_PAGES))
+=======
+		return;
+
+	if (WARN_ON(size > KGSL_IOMMU_GLOBAL_MEM_SIZE))
+		return;
+
+	if (memdesc->priv & KGSL_MEMDESC_RANDOM) {
+		u32 range = GLOBAL_MAP_PAGES - (size >> PAGE_SHIFT);
+
+		start = get_random_int() % range;
+	}
+
+	while (start >= 0) {
+		bit = bitmap_find_next_zero_area(global_map, GLOBAL_MAP_PAGES,
+			start, size >> PAGE_SHIFT, 0);
+
+		if (bit < GLOBAL_MAP_PAGES)
+			break;
+
+		start--;
+	}
+
+	if (WARN_ON(start < 0))
+>>>>>>> 9ee923a8a7d8573757c34eb9095117dc1e2d15b6
 		return;
 
 	memdesc->gpuaddr =
